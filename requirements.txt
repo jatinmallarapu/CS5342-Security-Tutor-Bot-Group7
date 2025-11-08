@@ -5,3 +5,4 @@ streamlit
 ollama
 google-genai
 langchain_huggingface
+pypdf
