@@ -3,20 +3,15 @@ import os
 import ollama
 from rag_pipeline import get_relevant_docs
 from google import genai
-# --------------------------
-# Helper to manage file paths dynamically
-# --------------------------
+from logger_utils import create_log_entry
+
 def get_chat_file(agent_key):
-    """Return chat history file path based on agent type."""
     if "quiz" in agent_key:
         return "chat_history_quiz.json"
     else:
         return "chat_history_tutor.json"
 
 
-# --------------------------
-# Chat History Management
-# --------------------------
 def load_chat_history(agent_key):
     chat_file = get_chat_file(agent_key)
     if os.path.exists(chat_file):
@@ -30,7 +25,6 @@ def save_chat_history(chat_history, agent_key):
         json.dump(chat_history, f, indent=2)
 
 def delete_chat(index, chat_history, agent_key=None):
-    """Delete a chat by index and return updated history"""
     if 0 <= index < len(chat_history):
         del chat_history[index]
         if agent_key:
@@ -38,9 +32,6 @@ def delete_chat(index, chat_history, agent_key=None):
     return chat_history
 
 
-# --------------------------
-# Local LLM Response
-# --------------------------
 client = genai.Client(api_key="AIzaSyA7j45L-0uSipbGCUjAjhtkyIdYjDVXRd0")
 
 def local_llm_generate(prompt: str) -> str:
@@ -51,9 +42,6 @@ def local_llm_generate(prompt: str) -> str:
     return response.text
 
 
-# --------------------------
-# Tutor Agent (RAG Response)
-# --------------------------
 def get_bot_response(user_query, current_chat):
     docs = get_relevant_docs(user_query)
     context = "\n".join([d.page_content for d in docs])
@@ -70,7 +58,6 @@ def get_bot_response(user_query, current_chat):
 
     bot_response = local_llm_generate(prompt)
 
-    # Add citations if any
     sources = []
     for d in docs:
         src = d.metadata.get("source", "Unknown Source")
@@ -78,12 +65,11 @@ def get_bot_response(user_query, current_chat):
     if sources:
         bot_response += "\n\n**Sources:** " + ", ".join(set(sources))
 
+    create_log_entry(user_query, docs, bot_response, agent_type="tutor")
+
     return bot_response
 
 
-# --------------------------
-# Quiz Agent Logic
-# --------------------------
 def get_quiz_response(user_query, current_chat):
     docs = get_relevant_docs(user_query)
     context = "\n".join([d.page_content for d in docs])
@@ -111,4 +97,7 @@ User: {user_query}
 Respond appropriately as the Quiz Agent:
 """
     bot_response = local_llm_generate(prompt)
+    
+    create_log_entry(user_query, docs, bot_response, agent_type="quiz")
+    
     return bot_response
