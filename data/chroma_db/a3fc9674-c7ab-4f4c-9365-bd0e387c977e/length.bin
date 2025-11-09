@@ -1,1 +1,0 @@
-Stream Ciphers•process the message bit by bit (as a stream) •typically have a (pseudo) random stream key•combined (XOR) with plaintext bit by bit •randomness of stream keycompletely destroysany statistically properties in the message •Ci= MiXOR StreamKeyi•what could be simpler!!!! •but must never reuse stream key•otherwise, can remove effect and recover messages, M⨁K⨁K = Mceool
